@@ -1,5 +1,5 @@
-/* Lisp Badge - uLisp 2.5
-   David Johnson-Davies - www.technoblogy.com - 10th January 2019
+/* Lisp Badge - uLisp 2.5a
+   David Johnson-Davies - www.technoblogy.com - 11th January 2019
 
    Licensed under the MIT license: https://opensource.org/licenses/MIT
 */
@@ -2729,7 +2729,7 @@ object *fn_plot (object *args, object *env) {
   ClearDisplay(); // Clear display
   if (args != NULL && integerp(first(args))) { xaxis = integer(first(args)); args = cdr(args); }
   if (args != NULL && integerp(first(args))) { yaxis = integer(first(args)); args = cdr(args); }
-  int nargs = max(listlength(args),4);
+  int nargs = min(listlength(args),4);
   for (int x=0; x<256; x++) {
     object *rest = args;
     for (int n=0; n<nargs; n++) {
