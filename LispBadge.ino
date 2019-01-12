@@ -1,5 +1,5 @@
-/* Lisp Badge - uLisp 2.5a
-   David Johnson-Davies - www.technoblogy.com - 11th January 2019
+/* Lisp Badge - uLisp 2.5b
+   David Johnson-Davies - www.technoblogy.com - 12th January 2019
 
    Licensed under the MIT license: https://opensource.org/licenses/MIT
 */
@@ -3770,7 +3770,7 @@ void PlotChar (uint8_t ch, uint8_t line, uint8_t column) {
     Send(0xB0); Send((row+r) & 0x3F);     // Row start
     PINA = 1<<dc;                         // dc high
     for (uint8_t c = 0 ; c < 3; c++) {
-      int adds = &CharMap[ch][c*2];
+      const uint8_t *adds = &CharMap[ch][c*2];
       uint8_t hi = pgm_read_byte(adds);
       uint8_t lo = pgm_read_byte(adds + 1);
       uint8_t mask = 1<<r;
