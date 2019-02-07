@@ -1,5 +1,5 @@
-/* Lisp Badge - uLisp 2.5b
-   David Johnson-Davies - www.technoblogy.com - 12th January 2019
+/* Lisp Badge - uLisp 2.6
+   David Johnson-Davies - www.technoblogy.com - 7th February 2019
 
    Licensed under the MIT license: https://opensource.org/licenses/MIT
 */
@@ -3770,7 +3770,7 @@ void PlotChar (uint8_t ch, uint8_t line, uint8_t column) {
     Send(0xB0); Send((row+r) & 0x3F);     // Row start
     PINA = 1<<dc;                         // dc high
     for (uint8_t c = 0 ; c < 3; c++) {
-      const uint8_t *adds = &CharMap[ch][c*2];
+      int adds = &CharMap[ch][c*2];
       uint8_t hi = pgm_read_byte(adds);
       uint8_t lo = pgm_read_byte(adds + 1);
       uint8_t mask = 1<<r;
@@ -3835,7 +3835,7 @@ void Display (char c) {
   } else if (c == '\n') {          // Newline
     Column = 0;
     if (Line == 7) ScrollDisplay(&Scroll); else Line++;
-  } 
+  } else if (c == 7) tone(4, 440, 125); // Beep
   // Show cursor
   PlotChar(0x7F, Line+Scroll, Column);
 }
@@ -3844,7 +3844,7 @@ void Display (char c) {
 
 const int ColumnsC = 0b01111100;            // Columns 0 to 4 in port C
 const int ColumnsD = 0b11111100;            // Columns 5 to 11 in port D
-const int Rows = 0b00001111;                // Rows 0 to 4 in port B
+const int RowBits  = 0b00001111;                // Rows 0 to 4 in port B
 
 // Character set - stored in program memory
 const char Keymap[] PROGMEM = 
@@ -3864,31 +3864,28 @@ void Highlight (uint8_t p, uint8_t invert) {
   }
 }
 
-void SetCol (uint8_t c) {
-  if (c >= 5) { PORTD = PORTD & ~(1<<(12-c)); }
-  else { PORTC = PORTC & ~(1<<(6-c)); }
-}
-
 ISR(TIMER2_OVF_vect) {
-  static uint8_t column = 0, parenthesis = 0, nokey = 0;
+  static uint8_t column = 0, nokey = 0;
   uint8_t rows, shift, row;
-  // Take columns high
-  PORTC = PORTC | ColumnsC;                    // Columns 0 to 4
-  PORTD = PORTD | ColumnsD;                    // Columns 5 to 11
-  // Take one column low
-  column = (column + 1) % 11;   // 0 to 10
-  if (column < 5) PINC = 1<<(6-column); else PIND = 1<<(12-column);
-  // Check rows and shift keys
-  shift = ((PINC & 1<<PINC7) && (PINB & 1<<PINB4)) ? 0 : 1;
-  rows = PINB & 0x0F;
-  if (rows == 0x0f) {
-    if (nokey < 11) nokey++;
-    return;
+  // Check rows and shift key
+  shift = (PINC & 1<<PINC7) ? 0 : 1;
+  rows = PINB & RowBits;
+  if (rows == RowBits) { if (nokey < 11) nokey++; }
+  else if (nokey < 11) nokey = 0;
+  else {
+    nokey = 0; row = 0;
+    while ((rows & (1<<row)) != 0) row++;
+    char c = pgm_read_byte(&Keymap[(3-row)*11 + column + 44*shift]);
+    ProcessKey(c);
   }
-  if (nokey < 11) {nokey = 0; return; }
-  nokey = 0; row = 0;
-  while ((rows & (1<<row)) != 0) row++;
-  char c = pgm_read_byte(&Keymap[(3-row)*11 + column + 44*shift]);
+  // Take last column high and next column low
+  if (column < 5) PORTC = PORTC | 1<<(6-column); else PORTD = PORTD | 1<<(12-column);
+  column = (column + 1) % 11;   // 0 to 10
+  if (column < 5) PORTC = PORTC & ~(1<<(6-column)); else PORTD = PORTD & ~(1<<(12-column));
+}
+  
+void ProcessKey (char c) {
+  static uint8_t parenthesis = 0;
   if (c == 27) { setflag(ESCAPE); return; }    // Escape key
   // Undo previous parenthesis highlight
   Highlight(parenthesis, 0);
@@ -3926,11 +3923,10 @@ ISR(TIMER2_OVF_vect) {
   return;
 }
 
-void InitKybd() {
+void InitKybd () {
   // Make rows input pullups
-  PORTB = PORTB | Rows;
-    // Make shift keys input pullups
-  PORTB = PORTB | 1<<PINB4;
+  PORTB = PORTB | RowBits;
+    // Make shift key input pullup
   PORTC = PORTC | 1<<PINC7;
   // Make columns outputs
   DDRC = DDRC | ColumnsC;         // Columns 0 to 4
@@ -3963,7 +3959,7 @@ void setup () {
   initworkspace();
   initenv();
   initsleep();
-  pfstring(PSTR("uLisp 2.5 "), pserial); pln(pserial);
+  pfstring(PSTR("uLisp 2.6 "), pserial); pln(pserial);
 }
 
 // Read/Evaluate/Print loop
