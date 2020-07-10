@@ -1,5 +1,5 @@
 /* Lisp Badge - uLisp 3.3a
-   David Johnson-Davies - www.technoblogy.com - 10th July 2020
+   David Johnson-Davies - www.technoblogy.com - 9th July 2020
 
    Licensed under the MIT license: https://opensource.org/licenses/MIT
 */
@@ -12,7 +12,7 @@ const char LispLibrary[] PROGMEM = "";
 #define checkoverflow
 // #define resetautorun
 #define printfreespace
-// #define serialmonitor
+#define serialmonitor
 // #define printgcs
 // #define sdcardsupport
 // #define lisplibrary
@@ -4147,7 +4147,7 @@ const char Keymap[] PROGMEM =
 // Without shift
 "1234567890\b" "qwertyuiop\n" "asdfghjkl \e" " zxcvbnm()."
 // With shift
-"\'\"#=-+/*\\;\b" "QWERTYUIOP\n" "ASDFGHJKL ~" " ZXCVBNM<>,";
+"\'\"#=-+/*\\;%" "QWERTYUIOP\n" "ASDFGHJKL ~" " ZXCVBNM<>,";
 
 // Parenthesis highlighting
 void Highlight (int p, uint8_t invert) {
